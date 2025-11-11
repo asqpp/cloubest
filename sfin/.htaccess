@@ -1,0 +1,63 @@
+# Insurance ERP - Development .htaccess Configuration
+# Simplified for localhost development
+
+# ===============================================
+# 1. BASIC SECURITY
+# ===============================================
+
+# Disable directory browsing
+Options -Indexes
+
+# Enable FollowSymLinks for mod_rewrite
+Options +FollowSymLinks
+
+# Disable server signature
+ServerSignature Off
+
+# ===============================================
+# 2. CODEIGNITER URL REWRITING
+# ===============================================
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /sfin/
+
+    # Remove index.php from URLs
+    RewriteCond %{THE_REQUEST} ^GET.*index\.php [NC]
+    RewriteRule ^(.*)index\.php(.*)$ /$1$2 [R=301,L]
+
+    # Route all requests through index.php
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^(.*)$ index.php/$1 [L,QSA]
+</IfModule>
+
+# Fallback for servers without mod_rewrite
+<IfModule !mod_rewrite.c>
+    ErrorDocument 404 /index.php
+</IfModule>
+
+# ===============================================
+# 3. UTF-8 ENCODING
+# ===============================================
+
+AddDefaultCharset UTF-8
+
+# ===============================================
+# 4. MIME TYPES
+# ===============================================
+
+<IfModule mod_mime.c>
+    AddType application/javascript js
+    AddType application/json json
+    AddType font/ttf ttf
+    AddType font/woff woff
+    AddType font/woff2 woff2
+    AddType image/svg+xml svg
+    AddType image/webp webp
+</IfModule>
+
+# ===============================================
+# END OF DEVELOPMENT CONFIGURATION
+# ===============================================
+# Note: For production, use .htaccess.production.backup
