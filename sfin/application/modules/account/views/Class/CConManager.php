@@ -25,11 +25,45 @@ class CConManager
         return mysqli_insert_id($this->conn);
     }
 
-    public function query($sql)
+    public function query($sql, $params = array())
     {
         try
         {
-            $resource = mysqli_query($this->conn,$sql );
+            // SECURITY FIX: Support prepared statements to prevent SQL injection
+            if (!empty($params)) {
+                // Use prepared statements when parameters are provided
+                $stmt = mysqli_prepare($this->conn, $sql);
+                if (!$stmt) {
+                    $oResult = new CResult();
+                    $oResult->message = mysqli_error($this->conn);
+                    $oResult->error = mysqli_errno($this->conn);
+                    $oResult->IsSucess = FALSE;
+                    return $oResult;
+                }
+
+                // Bind parameters dynamically
+                if (!empty($params)) {
+                    $types = str_repeat('s', count($params)); // Default to string type
+                    mysqli_stmt_bind_param($stmt, $types, ...$params);
+                }
+
+                mysqli_stmt_execute($stmt);
+                $resource = mysqli_stmt_get_result($stmt);
+
+                if ($resource === FALSE && mysqli_stmt_affected_rows($stmt) >= 0) {
+                    // Non-SELECT query (INSERT, UPDATE, DELETE)
+                    $oResult = new CResult();
+                    $oResult->effected_row = mysqli_stmt_affected_rows($stmt);
+                    $oResult->IsSucess = TRUE;
+                    mysqli_stmt_close($stmt);
+                    return $oResult;
+                }
+                mysqli_stmt_close($stmt);
+            } else {
+                // Legacy mode: direct query (use only for queries without user input)
+                $resource = mysqli_query($this->conn, $sql);
+            }
+
             if ($resource)
             {
                 if ($resource instanceof mysqli_result)

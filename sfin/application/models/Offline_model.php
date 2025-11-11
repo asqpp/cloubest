@@ -973,7 +973,9 @@ public function credit_customer_list($limit=null,$start=null) {
         $this->db->select('a.*,b.supplier_name');
         $this->db->from('product_purchase a');
         $this->db->join('supplier_information b', 'b.supplier_id = a.supplier_id','left');
-        $this->db->where('a.purchase_date BETWEEN "'.$startdate. '" and "'.$enddate.'"');
+        // Fixed SQL injection: Use parameterized where clauses instead of string concatenation
+        $this->db->where('a.purchase_date >=', $startdate);
+        $this->db->where('a.purchase_date <=', $enddate);
         $this->db->order_by('a.purchase_date', 'desc');
         $query = $this->db->get();
 
@@ -1242,14 +1244,19 @@ public function delete_purchase($id = null){
     }
     
       public function general_led_get($Headid){
-        $sql="SELECT * FROM acc_coa WHERE HeadCode='$Headid' ";
-        $query = $this->db->query($sql);
-        $rs=$query->row();
+        // CRITICAL FIX: SQL Injection - Use parameterized queries
+        $sql = "SELECT * FROM acc_coa WHERE HeadCode = ?";
+        $query = $this->db->query($sql, array($Headid));
+        $rs = $query->row();
 
+        // CRITICAL FIX: SQL Injection - Escape database value before using in query
+        if ($rs && isset($rs->HeadName)) {
+            $sql = "SELECT * FROM acc_coa WHERE IsTransaction=1 AND PHeadName = ? ORDER BY HeadName";
+            $query = $this->db->query($sql, array($rs->HeadName));
+            return $query->result();
+        }
 
-        $sql="SELECT * FROM acc_coa WHERE IsTransaction=1 AND PHeadName='".$rs->HeadName."' ORDER BY HeadName";
-        $query = $this->db->query($sql);
-        return $query->result();
+        return array(); // Return empty array if no initial result
     }
     
     public function general_led_report_headname($cmbGLCode){
@@ -1262,25 +1269,29 @@ public function delete_purchase($id = null){
     public function general_led_report_headname2($cmbGLCode,$cmbCode,$dtpFromDate,$dtpToDate,$chkIsTransction){
 
             if($chkIsTransction){
-                
+
                 $this->db->select('acc_transaction.VNo, acc_transaction.Vtype, acc_transaction.VDate, acc_transaction.Narration, acc_transaction.Debit, acc_transaction.Credit, acc_transaction.IsAppove, acc_transaction.COAID,acc_coa.HeadName, acc_coa.PHeadName, acc_coa.HeadType');
                 $this->db->from('acc_transaction');
                 $this->db->join('acc_coa','acc_transaction.COAID = acc_coa.HeadCode', 'left');
                 $this->db->where('acc_transaction.IsAppove',1);
-                $this->db->where('VDate BETWEEN "'.$dtpFromDate. '" and "'.$dtpToDate.'"');
+                // Fixed SQL injection: Use parameterized where clauses for date range
+                $this->db->where('VDate >=', $dtpFromDate);
+                $this->db->where('VDate <=', $dtpToDate);
                 $this->db->where('acc_transaction.COAID',$cmbCode);
                 $query = $this->db->get();
                 return $query->result();
             }
             else{
-               
+
                 $this->db->select('acc_transaction.COAID,acc_transaction.Debit, acc_transaction.Credit,acc_coa.HeadName,acc_transaction.IsAppove, acc_coa.PHeadName, acc_coa.HeadType');
                 $this->db->from('acc_transaction');
                 $this->db->join('acc_coa','acc_transaction.COAID = acc_coa.HeadCode', 'left');
                 $this->db->where('acc_transaction.IsAppove',1);
-                $this->db->where('VDate BETWEEN "'.$dtpFromDate. '" and "'.$dtpToDate.'"');
+                // Fixed SQL injection: Use parameterized where clauses for date range
+                $this->db->where('VDate >=', $dtpFromDate);
+                $this->db->where('VDate <=', $dtpToDate);
                 $this->db->where('acc_transaction.COAID',$cmbCode);
-               
+
                 $query = $this->db->get();
                 return $query->result();
             }
