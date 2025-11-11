@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(\"C:/xampp/mysql/bin/mysql.exe\" -u root -e \"USE cybor432_erpnew; SELECT id, username, email, usertype, status FROM users;\")",
+      "Bash(nul)",
+      "Bash(copy:*)",
+      "Bash(cp:*)",
+      "Bash(\"C:/xampp/mysql/bin/mysql.exe\" -u root -e \"USE cybor432_erpnew; DESCRIBE roles;\")"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
